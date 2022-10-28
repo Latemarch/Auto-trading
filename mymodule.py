@@ -31,8 +31,8 @@ def Order_Reduceonly(Wallet,position,history,price,tictime):
     else:
         history['short']['sell']['time'].append(timee)
         history['short']['sell']['price'].append(price)
+    print(Wallet['time'][-1],round(Wallet['balance'][-1],2),position['side'],round(add,2),'//',price,position['entry_price'])
     position['side']=0
-    print(Wallet['time'][-1],Wallet['balance'][-1],price,position['losscut'])
 
     #Wallet.loc[len(Wallet)]=[timee,balance,]
 
@@ -44,13 +44,14 @@ def Order_Limit(side,position,history,price,tictime):
         position['side'] = 1
         position['entry_price'] = price
         position['profitcut'] = 1.01*price
-        position['losscut'] = price*0.99
+        position['losscut'] = price*0.995
     else:
         history['short']['buy']['time'].append(timee)
         history['short']['buy']['price'].append(price)
+        position['entry_price'] = price
         position['side'] = -1
         position['profitcut'] = 0.99*price
-        position['losscut'] = 1.01*price
+        position['losscut'] = 1.005*price
     
 
 def candle_go(ohlc):
@@ -124,12 +125,12 @@ def vol_vol(ohlc):
     
     return list
                 
-def linearfit(ohlc,lin):
-    lenn = 12
-    list = ohlc[-lenn:,4] 
+def linearfit(tictime,list,lin,length):
+    lenn = length
+    list = list[-lenn:]
     z=np.polyfit(range(lenn),list,1)
     p=np.poly1d(z)
-    timee = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(ohlc[-1,0]+60)))
+    timee = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(tictime+60)))
     lin['time'].append(timee)
     mid = p(lenn)
     lin['mid'].append(mid)
