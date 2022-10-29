@@ -76,8 +76,11 @@ def minmax_ohlc(ohlc,localextrema,lin,a):#a is half-length
         t= time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(ohlc[-a,0])))
         localextrema['maximum']['time'].append(t)
         localextrema['maximum']['price'].append(ohlc[-a,2])
-        localextrema['maximum']['length'].append(localextrema['maximum']['price'][-1]-lin['mid'][-a])
+        if localextrema['aori'] == -1:
+            localextrema['maximum']['length'].append(localextrema['maximum']['price'][-1]-localextrema['minimum']['price'][-1])
 
+    if np.argmin(ohlc[-c:,3])==b:
+        t= time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(ohlc[-a,0])))
         localextrema['minimum']['time'].append(t)
         localextrema['minimum']['price'].append(ohlc[-a,3])
         localextrema['minimum']['length'].append(lin['mid'][-a]-localextrema['minimum']['price'][-1])

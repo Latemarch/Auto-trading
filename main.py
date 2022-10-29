@@ -20,6 +20,7 @@ history = {
 localextrema = {
     'maximum':{'time':[],'price':[],'length':[]},
     'minimum':{'time':[],'price':[],'length':[]},
+    'aori':0
 }
 localextrema_ohlc = {
     'maximum':{'time':[],'price':[],'length':[]},
@@ -129,7 +130,7 @@ if graph:
     ohlc_max = np.array(localextrema_ohlc['maximum']['price'])
     ohlc_max = ohlc_max + 50
     ohlc_min = np.array(localextrema_ohlc['minimum']['price'])
-    ohlc_min = ohlc_min + 50
+    ohlc_min = ohlc_min - 100
                     
     df, candle = mm.candle_go(ohlc)
     fig = ms.make_subplots(rows=2,cols=1,shared_xaxes=True,shared_yaxes=False,vertical_spacing=0.02)
