@@ -69,7 +69,7 @@ def indicator_go(indicators):
     ma10=go.Scatter(x=indicators['time'],y=indicators['ma1'],line=dict(color='black',width=0.8),name='ma10')
     ma20=go.Scatter(x=indicators['time'],y=indicators['ma2'],line=dict(color='black',width=0.8),name='ma20')
 
-def minmax_ohlc(ohlc,localextrema,a):#a is half-length
+def minmax_ohlc(ohlc,localextrema,lin,a):#a is half-length
     c = a*2-1
     b = a-1
     if np.argmax(ohlc[-c:,2])==b:
@@ -82,8 +82,7 @@ def minmax_ohlc(ohlc,localextrema,a):#a is half-length
         t= time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(ohlc[-a,0])))
         localextrema['minimum']['time'].append(t)
         localextrema['minimum']['price'].append(ohlc[-a,3])
-        if localextrema['maximum']['price']:
-            localextrema['minimum']['length'].append(localextrema['maximum']['price'][-1]-localextrema['minimum']['price'][-1])
+        localextrema['minimum']['length'].append(lin['mid'][-a]-localextrema['minimum']['price'][-1])
 
 
 def minmax_macd(list,localextrema,a):#a is half-length

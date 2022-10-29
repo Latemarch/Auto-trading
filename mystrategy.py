@@ -29,3 +29,7 @@ def macd(k,position,indicators,localextrema,price,macdlimit,premaxmacd):
     elif permit_short:
         return -1,targetprice
     else: return 0,0
+
+
+#def minmax(localextrema_ohlc):
+#     if 

@@ -89,12 +89,12 @@ for h in range(start,last):
             if k < 50: continue 
             mm.makingindi(ohlc,indicators,tictime)
             mm.minmax_macd(indicators,localextrema,10)
-            mm.minmax_ohlc(ohlc,localextrema_ohlc,10)
+            mm.linearfit(tictime,ohlc[:,4],lin,10)
+            mm.minmax_ohlc(ohlc,localextrema_ohlc,lin,10)
             volindi = mm.vol_vol(ohlc)
             
 
             
-            mm.linearfit(tictime,ohlc[:,4],lin,10)
             #mm.minmax_ohlc(indicators,localextrema_ohlc,5)
 
             order,targetprice = st.macd(k,position,indicators,localextrema,price,50,premaxmacd)
@@ -126,6 +126,10 @@ for h in range(start,last):
         
         
 if graph:
+    ohlc_max = np.array(localextrema_ohlc['maximum']['price'])
+    ohlc_max = ohlc_max + 50
+    ohlc_min = np.array(localextrema_ohlc['minimum']['price'])
+    ohlc_min = ohlc_min + 50
                     
     df, candle = mm.candle_go(ohlc)
     fig = ms.make_subplots(rows=2,cols=1,shared_xaxes=True,shared_yaxes=False,vertical_spacing=0.02)
@@ -135,6 +139,8 @@ if graph:
     lin_bot=go.Scatter(x=lin['time'],y=lin['bot'],line=dict(color='red',width=0.8),name='lintop')
     history_SL = go.Scatter(x=history['short']['sell']['time'], y=history['short']['sell']['price'], mode ="markers", marker=dict(size =20,color='green',symbol= '6'), name='Sell long')
     history_BL = go.Scatter(x=history['short']['buy']['time'], y=history['short']['buy']['price'], mode ="markers", marker=dict(size = 20, color='red',symbol= '6'), name='buy long')
+    ohlc_max = go.Scatter(x=localextrema_ohlc['maximum']['time'], y=ohlc_max, mode ="markers", marker=dict(size =20,color='green',symbol= '6'), name='Sell long')
+    ohlc_min = go.Scatter(x=localextrema_ohlc['minimum']['time'], y=ohlc_min, mode ="markers", marker=dict(size =20,color='red',symbol= '5'), name='Sell long')
     MACD_Oscil = go.Bar(x=indicators['time'], y=indicators['macd_osc'], marker_color='red', name='MACD_Oscil')
     volume= go.Bar(x=df.index, y=df['volume'], marker_color='black', name='Volume')
 
@@ -143,10 +149,13 @@ if graph:
     fig.add_trace(lin_mid,row=1,col=1)
     fig.add_trace(lin_bot,row=1,col=1)
     fig.add_trace(candle, row=1,col=1)
-    fig.add_trace(history_SL,row=1,col=1)
-    fig.add_trace(history_BL,row=1,col=1)
+    #fig.add_trace(history_SL,row=1,col=1)
+    #fig.add_trace(history_BL,row=1,col=1)
+    fig.add_trace(ohlc_max,row=1,col=1)
+    fig.add_trace(ohlc_min,row=1,col=1)
     fig.add_trace(MACD_Oscil,row=2,col=1)
     fig.show()
 
 
-    print("time :",time.time()-startcode)
+
+print("time :",time.time()-startcode)
