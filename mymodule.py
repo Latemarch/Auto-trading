@@ -43,15 +43,17 @@ def Order_Limit(side,position,history,price,tictime):
         history['long']['buy']['price'].append(price)
         position['side'] = 1
         position['entry_price'] = price
-        position['profitcut'] = 1.01*price
-        position['losscut'] = price*0.995
+        position['profitcut'] = 1.015*price
+        position['losscut'] = price*0.95
+        position['lbtime']=tictime
     else:
         history['short']['buy']['time'].append(timee)
         history['short']['buy']['price'].append(price)
         position['entry_price'] = price
         position['side'] = -1
-        position['profitcut'] = 0.99*price
-        position['losscut'] = 1.005*price
+        position['profitcut'] = 0.985*price
+        position['losscut'] = 1.05*price
+        position['sbtime']=tictime
     
 
 def candle_go(ohlc):
@@ -78,12 +80,15 @@ def minmax_ohlc(ohlc,localextrema,lin,a):#a is half-length
         localextrema['maximum']['price'].append(ohlc[-a,2])
         if localextrema['aori'] == -1:
             localextrema['maximum']['length'].append(localextrema['maximum']['price'][-1]-localextrema['minimum']['price'][-1])
+        localextrema['aori'] = 1
 
     if np.argmin(ohlc[-c:,3])==b:
         t= time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(ohlc[-a,0])))
         localextrema['minimum']['time'].append(t)
         localextrema['minimum']['price'].append(ohlc[-a,3])
-        localextrema['minimum']['length'].append(lin['mid'][-a]-localextrema['minimum']['price'][-1])
+        if localextrema['aori'] == 1:
+            localextrema['minimum']['length'].append(localextrema['maximum']['price'][-1]-localextrema['minimum']['price'][-1])
+        localextrema['aori'] = -1
 
 
 def minmax_macd(list,localextrema,a):#a is half-length
@@ -105,7 +110,7 @@ def vol_vol(ohlc):
     for row in ohlc[-10:]:
         if row[4]-row[1] > 0:
             list[0]+=row[5]
-        else: list-=row[5]
+        else: list[0]-=row[5]
 
     #list[1]=list[0]
 

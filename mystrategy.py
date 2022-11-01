@@ -11,7 +11,7 @@ def macd(k,position,indicators,localextrema,price,macdlimit,premaxmacd):
             
 
     if not position['side'] and len(indicators['macd_osc'])>1:
-        if indicators['macd_osc'][-1] < -macdlimit and indicators['macd_osc'][-2] < indicators['macd_osc'][-1] and position['ltime'] < k-20 >0:
+        if indicators['macd_osc'][-1] < -macdlimit and indicators['macd_osc'][-2] < indicators['macd_osc'][-1] and position['ltime'] < k-600 >0:
             targetprice = price - 1
             permit_long = 1
 
@@ -21,7 +21,7 @@ def macd(k,position,indicators,localextrema,price,macdlimit,premaxmacd):
                     permit_short1=1
                 premaxmacd = localextrema['maximum']['price'][-1]
 
-            if indicators['macd_osc'][-2]>0 and indicators['macd_osc'][-1] < 0 and position['stime']<k-20 and permit_short1:
+            if indicators['macd_osc'][-2]>0 and indicators['macd_osc'][-1] < 0 and position['stime']<k-600 and permit_short1:
                 permit_short=1
                 targetprice = price + 1
     if permit_long:
@@ -33,3 +33,28 @@ def macd(k,position,indicators,localextrema,price,macdlimit,premaxmacd):
 
 #def minmax(localextrema_ohlc):
 #     if 
+
+def exitprice(position,ohlc,extrema):
+    exitp = 0
+    if position['side'] == 1:
+        i = int((ohlc[-1,0]-position['lbtime'])/60)
+        if i:
+            k =np.argmin(ohlc[-i:,3])
+            minprice = ohlc[-i+k,3]
+            extrema = np.array(extrema['maximum']['length'][-5:])
+            exitp = minprice+np.mean(extrema)*2
+            if position['profitcut'] > exitp:
+                position['profitcut'] = exitp
+    elif position['side'] == -1:
+        i = int((ohlc[-1,0]-position['sbtime'])/60)
+        if i:
+            k =np.argmax(ohlc[-i:,2])
+            maxprice = ohlc[-i+k,2]
+            extrema = np.array(extrema['minimum']['length'][-5:])
+            exitp = maxprice-np.mean(extrema)*2
+            if position['profitcut'] < exitp:
+                position['profitcut'] = exitp
+
+
+        
+        
