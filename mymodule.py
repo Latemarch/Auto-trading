@@ -20,9 +20,10 @@ def makingindi(ohlc,indicators,tictime):#indicators(0time,1ma1,2ma2,3macd,4macd_
     indicators['macd_sig'] = np.concatenate((indicators['macd_sig'],[np.mean(indicators['macd'][-9:])]),axis=0)
     indicators['macd_osc'] = np.concatenate((indicators['macd_osc'],[indicators['macd'][-1] - indicators['macd_sig'][-1]]),axis=0)
 
-def Order_Reduceonly(Wallet,position,history,price,tictime):
+def Order_Reduceonly(Wallet,position,history,price,tictime,Taker):
+    commition=0.00058 if Taker==True else 0.0002
     timee = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(tictime)))
-    add = position['side']*(price - position['entry_price'])*position['size']/price-0.058
+    add = position['side']*(price - position['entry_price'])*position['size']/price-commition*position['size']
     Wallet['balance'].append(Wallet['balance'][-1] + add)
     Wallet['time'].append(timee)
     if position['side'] == 1:
@@ -31,28 +32,28 @@ def Order_Reduceonly(Wallet,position,history,price,tictime):
     else:
         history['short']['sell']['time'].append(timee)
         history['short']['sell']['price'].append(price)
-    print(Wallet['time'][-1],round(Wallet['balance'][-1],2),position['side'],round(add,2),'//',price,position['entry_price'])
+    print(Wallet['time'][-1],round(Wallet['balance'][-1],2),position['side'],round(add,2),'//',price,'ent=',round(position['entry_price'],1),'pro=',round(position['profitcut'],1),'los=',round(position['losscut'],1))
     position['side']=0
 
     #Wallet.loc[len(Wallet)]=[timee,balance,]
 
-def Order_Limit(side,position,history,price,tictime):
+def Order_Limit(side,position,history,price,tictime,lin):
     timee = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(tictime)))
     if side == 'long':
         history['long']['buy']['time'].append(timee)
         history['long']['buy']['price'].append(price)
         position['side'] = 1
         position['entry_price'] = price
-        position['profitcut'] = 1.015*price
-        position['losscut'] = price*0.95
+        position['profitcut'] = 1.02*price
+        position['losscut'] = price*0.99
         position['lbtime']=tictime
     else:
         history['short']['buy']['time'].append(timee)
         history['short']['buy']['price'].append(price)
         position['entry_price'] = price
         position['side'] = -1
-        position['profitcut'] = 0.985*price
-        position['losscut'] = 1.05*price
+        position['profitcut'] = 0.98*price
+        position['losscut'] = 1.001*price
         position['sbtime']=tictime
     
 
@@ -130,17 +131,18 @@ def vol_vol(ohlc):
     
     return list
                 
-def linearfit(tictime,list,lin,length):
+def linearfit(tictime,ohlc,lin,length):
     lenn = length
-    list = list[-lenn:]
+    std = np.std(ohlc[-lenn:])
+    list = ohlc[-lenn:]
     z=np.polyfit(range(lenn),list,1)
     p=np.poly1d(z)
     timee = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(tictime+60)))
     lin['time'].append(timee)
     mid = p(lenn)
     lin['mid'].append(mid)
-    lin['top'].append(mid+list[-1]*0.002)
-    lin['bot'].append(mid-list[-1]*0.002)
+    lin['top'].append(mid+std)
+    lin['bot'].append(mid-list[-1]*0.002-std)
 
         
 

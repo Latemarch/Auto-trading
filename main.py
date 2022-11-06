@@ -34,9 +34,11 @@ permit_long = 0
 permit_short= 0
 permit_short1= 0
 premaxmacd = 0
-start = 0
-last = 1
-graph = 1
+start =0 
+last = 14
+graph = 0
+Order = 5
+Order1=5
 for h in range(start,last):
     with gzip.open('/Users/jun/btcusd/%03d.gz' % h, 'rb') as f:
         data = f.readlines()
@@ -65,9 +67,7 @@ for h in range(start,last):
             'macd_sig':np.empty([0]),
             'macd_osc':np.empty([0])
         }
-    
-    print(daytics[0])
-
+    print(h) 
     for i, row in enumerate(daytics):
         ohlc_list.append(float(row[4]))
         volume += (float(row[3]))
@@ -76,6 +76,8 @@ for h in range(start,last):
         else: 
             tictime = float(row[0])
             price = ohlc_list[-1]
+        if ohlc_list[0] - ohlc_list[-1]> 200: Order =-3
+  
 
         # i min canlde =========================
         if minute != tictime//60:
@@ -87,42 +89,75 @@ for h in range(start,last):
         # i min canlde =========================
         
             if k < 50: continue 
+            #======idicators======
             mm.makingindi(ohlc,indicators,tictime)
             mm.minmax_macd(indicators,localextrema,10)
-            mm.linearfit(tictime,ohlc[:,4],lin,30)
+            mm.linearfit(tictime,ohlc[:,4],lin,40)
             mm.minmax_ohlc(ohlc,localextrema_ohlc,lin,10)
-            volindi = mm.vol_vol(ohlc)
+            #======idicators======
 
-            order,targetprice = st.macd(tictime,position,indicators,localextrema,price,50,premaxmacd)
+            #Order,targetprice = st.macd(tictime,position,indicators,localextrema,price,70,premaxmacd)
+
+
+            if len(localextrema_ohlc['maximum']['price'])<3:continue
+            #Order, targetprice = st.minmax(tictime,position,price,localextrema_ohlc,lin)
+            Order,targetprice = st.minmax1(tictime,position,lin)
+            #Order1,targetprice1 = st.minmax2(tictime,position,lin)
+            #volindi = mm.vol_vol(ohlc)
             st.exitprice(position,ohlc,localextrema_ohlc)
+            jam = st.jammed(ohlc)
+            if jam < 10:
+                Order =2
 
-            if order == 1:
-                if volindi[3] < 0:
-                    order = 0
-            elif order == -1:
-                if volindi[3] > 0: order = 0
 
-            #if order:print(order,targetprice)
+            if position['side']==1:
+                if price > lin['top'][-1]+20:
+                    Order = 2
+            elif position['side']==-1:
+                if price < position['profitcut']:
+                    Order =-2#short_reduceonly_maker
+                elif price > position['losscut']:
+                    Order =-3#short_reduceonly_taker
+                elif indicators['macd_osc'][-2]>0:
+                    Order =-3
+                elif indicators['macd_osc'][-2]<-30:
+                    Order =-3
+                elif Order == 1:
+                    Order = -2
+
+                        
+
                 
 
         if k < 50: continue 
 
-        if position['side']:
-            if position['side'] == 1:
-                if price < position['losscut'] or price > position['profitcut']:  
-                    mm.Order_Reduceonly(Wallet,position,history,price,tictime)
-                    position['ltime'] = tictime
-            else:
-                if price > position['losscut'] or price < position['profitcut']:
-                    mm.Order_Reduceonly(Wallet,position,history,price,tictime)
-                    position['stime'] = tictime
+        if position['side']==1:
+            if Order==2:
+                mm.Order_Reduceonly(Wallet,position,history,price,tictime,Taker=False)
+                position['ltime'] = tictime
+            elif Order==3:
+                mm.Order_Reduceonly(Wallet,position,history,price,tictime,Taker=True)
+                position['ltime'] = tictime
+            elif price < position['losscut']:
+                mm.Order_Reduceonly(Wallet,position,history,price,tictime,Taker=True)
+                position['ltime'] = tictime
+            elif price > position['profitcut']:
+                Order = 2#long_reduceonly_maker
+                targetprice = position['profitcut']
+        elif position['side']==-1:
+            if Order==-2:
+                mm.Order_Reduceonly(Wallet,position,history,price,tictime,Taker=False)
+                position['stime'] = tictime
+            elif Order==-3:
+                mm.Order_Reduceonly(Wallet,position,history,price,tictime,Taker=True)
+                position['stime'] = tictime
         else:
-            if order == 1 and price <= targetprice:
-                mm.Order_Limit('long',position,history,targetprice,tictime)
-                permit_long = 0
-            elif order == -1 and price > targetprice:
-                mm.Order_Limit('short',position,history,targetprice,tictime)
-                permit_short=0
+            if Order == 1 and price <= targetprice:
+                mm.Order_Limit('long',position,history,price,tictime,lin)
+                position['stime'] = tictime
+            elif Order == -1 and price >= targetprice:
+                mm.Order_Limit('short',position,history,price,tictime,lin)
+                position['stime'] = tictime
 
 
 
@@ -142,7 +177,7 @@ if graph:
     lin_mid=go.Scatter(x=lin['time'],y=lin['mid'],line=dict(color='red',width=0.8),name='lintop')
     lin_bot=go.Scatter(x=lin['time'],y=lin['bot'],line=dict(color='red',width=0.8),name='lintop')
     history_SL = go.Scatter(x=history['long']['sell']['time'], y=history['long']['sell']['price'], mode ="markers", marker=dict(size =20,color='green',symbol= '6'), name='Sell long')
-    history_BL = go.Scatter(x=history['long']['buy']['time'], y=history['long']['buy']['price'], mode ="markers", marker=dict(size = 20, color='red',symbol= '6'), name='buy long')
+    history_BL = go.Scatter(x=history['long']['buy']['time'], y=history['long']['buy']['price'], mode ="markers", marker=dict(size = 20, color='red',symbol= '5'), name='buy long')
     ohlc_max = go.Scatter(x=localextrema_ohlc['maximum']['time'], y=ohlc_max, mode ="markers", marker=dict(size =20,color='green',symbol= '6'), name='Sell long')
     ohlc_min = go.Scatter(x=localextrema_ohlc['minimum']['time'], y=ohlc_min, mode ="markers", marker=dict(size =20,color='red',symbol= '5'), name='Sell long')
     MACD_Oscil = go.Bar(x=indicators['time'], y=indicators['macd_osc'], marker_color='red', name='MACD_Oscil')
