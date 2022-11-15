@@ -26,6 +26,9 @@ def Order_Reduceonly(Wallet,position,history,price,tictime,Taker):
     add = position['side']*(price - position['entry_price'])*position['size']/price-commition*position['size']
     Wallet['balance'].append(Wallet['balance'][-1] + add)
     Wallet['time'].append(timee)
+    if position['side']==1:Wallet['lprofit'].append(add)
+    elif position['side']==-1:Wallet['sprofit'].append(add)
+    
     if position['side'] == 1:
         history['long']['sell']['time'].append(timee)
         history['long']['sell']['price'].append(price)
@@ -145,6 +148,61 @@ def linearfit(tictime,ohlc,lin,length):
     lin['bot'].append(mid-list[-1]*0.002-std)
 
         
+import matplotlib.pyplot as plt
+def profitrate(Wallet):
+    Wallet['sprofit']=[1]
+
+    fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(9, 4))
+    all_data=([(Wallet['lprofit']),(Wallet['sprofit'])])
+
+    # plot violin plot
+    axs[0].violinplot(all_data,
+                    showmeans=True,
+                    showmedians=False)
+    axs[0].set_title('Violin plot')
+
+    # plot box plot
+    axs[1].boxplot(all_data)
+    axs[1].set_title('Box plot')
+
+    # adding horizontal grid lines
+    for ax in axs:
+        ax.yaxis.grid(True)
+        ax.set_xticks([y + 1 for y in range(len(all_data))],
+                    labels=['Long', 'Short'])
+        ax.set_xlabel('samples')
+        ax.set_ylabel('Observed values')
+
+    plt.show()
+
+
+def extremadist(list):
+
+    fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(9, 4))
+    all_data=([(list['maximum']['length']),(list['minimum']['length'])])
+
+    # plot violin plot
+    axs[0].violinplot(all_data,
+                    showmeans=True,
+                    showmedians=False)
+    axs[0].set_title('Violin plot')
+
+    # plot box plot
+    axs[1].boxplot(all_data)
+    axs[1].set_title('Box plot')
+
+    # adding horizontal grid lines
+    for ax in axs:
+        ax.yaxis.grid(True)
+        ax.set_xticks([y + 1 for y in range(len(all_data))],
+                    labels=['min to max', 'max to min'])
+        ax.set_xlabel('samples')
+        ax.set_ylabel('Observed values')
+
+    plt.show()
+
+
+
 
 
 

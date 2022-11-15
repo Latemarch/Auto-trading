@@ -43,7 +43,7 @@ def exitprice(position,ohlc,extrema):
             k =np.argmin(ohlc[-i:,3])
             minprice = ohlc[-i+k,3]
             extrema = np.array(extrema['maximum']['length'][-5:])
-            exitp = minprice*1.02#+np.mean(extrema)
+            exitp = minprice*1.01#+np.mean(extrema)
             if position['profitcut'] > exitp:
                 position['profitcut'] = exitp
     elif position['side'] == -1:
@@ -76,9 +76,9 @@ def minmax(tictime,position,price,localex_ohlc,lin):
 def minmax1(tictime,position,lin):
     Order = 0
     tprice= 0
-    if not position['side'] and position['ltime']<tictime-600:
+    if not position['side'] and position['ltime']<tictime-1200:
         Order = 1
-        tprice = lin['bot'][-1]-120
+        tprice = lin['bot'][-1]-100
 
     return Order,tprice
         

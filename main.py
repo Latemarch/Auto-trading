@@ -1,4 +1,3 @@
-import locale
 import numpy as np
 import pandas as pd
 import time
@@ -11,7 +10,7 @@ import mystrategy as st
 startcode = time.time()
     
 candle = pd.DataFrame(columns =['time','open','high','low','close','volume'])
-Wallet = {'time':[],'balance':[100]}
+Wallet = {'time':[],'lprofit':[],'sprofit':[],'balance':[100]}
 history = {
     'long':{'buy':{'time':[],'price':[]},'sell':{'time':[],'price':[]}},
     'short':{'buy':{'time':[],'price':[]},'sell':{'time':[],'price':[]}},
@@ -35,10 +34,10 @@ permit_short= 0
 permit_short1= 0
 premaxmacd = 0
 start =0 
-last = 14
+last = 20
 graph = 0
 Order = 5
-Order1=5
+stoporder = 0
 for h in range(start,last):
     with gzip.open('/Users/jun/btcusd/%03d.gz' % h, 'rb') as f:
         data = f.readlines()
@@ -76,7 +75,10 @@ for h in range(start,last):
         else: 
             tictime = float(row[0])
             price = ohlc_list[-1]
-        if ohlc_list[0] - ohlc_list[-1]> 200: Order =-3
+        if ohlc_list[0] - ohlc_list[-1]> 100: 
+            Order=-3
+            stoporder=1
+
   
 
         # i min canlde =========================
@@ -100,12 +102,10 @@ for h in range(start,last):
 
 
             if len(localextrema_ohlc['maximum']['price'])<3:continue
-            #Order, targetprice = st.minmax(tictime,position,price,localextrema_ohlc,lin)
             Order,targetprice = st.minmax1(tictime,position,lin)
-            #Order1,targetprice1 = st.minmax2(tictime,position,lin)
-            #volindi = mm.vol_vol(ohlc)
             st.exitprice(position,ohlc,localextrema_ohlc)
             jam = st.jammed(ohlc)
+
             if jam < 10:
                 Order =2
 
@@ -143,7 +143,7 @@ for h in range(start,last):
                 position['ltime'] = tictime
             elif price > position['profitcut']:
                 Order = 2#long_reduceonly_maker
-                targetprice = position['profitcut']
+                #targetprice = position['profitcut']
         elif position['side']==-1:
             if Order==-2:
                 mm.Order_Reduceonly(Wallet,position,history,price,tictime,Taker=False)
@@ -154,10 +154,12 @@ for h in range(start,last):
         else:
             if Order == 1 and price <= targetprice:
                 mm.Order_Limit('long',position,history,price,tictime,lin)
-                position['stime'] = tictime
             elif Order == -1 and price >= targetprice:
                 mm.Order_Limit('short',position,history,price,tictime,lin)
-                position['stime'] = tictime
+            elif Order == 11:
+                if price<=targetprice:
+                    mm.Order_Limit('long',position,history,price,tictime,lin)
+
 
 
 
@@ -198,3 +200,7 @@ if graph:
 
 #print(localextrema['maximum']['length'])
 print("time :",time.time()-startcode)
+
+
+#mm.profitrate(Wallet)
+mm.extremadist(localextrema)

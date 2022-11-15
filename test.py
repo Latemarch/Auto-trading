@@ -1,3 +1,4 @@
+'''
 import pandas as pd
 import numpy as np
 
@@ -20,4 +21,32 @@ import matplotlib.pyplot as plt
 p = np.poly1d(z)
 plt.plot(range(len(y)),y,'ro',x,p(x),'b-')
 plt.show()
-    
+'''    
+import numpy as np
+
+import matplotlib.pyplot as plt
+def profitrate(Wallet):
+    Wallet['sprofit']=[1]
+
+    fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(9, 4))
+    all_data=np.array([np.array(Wallet['lprofit']),np.array(Wallet['sprofit'])])
+
+    # plot violin plot
+    axs[0].violinplot(all_data,
+                    showmeans=True,
+                    showmedians=False)
+    axs[0].set_title('Violin plot')
+
+    # plot box plot
+    axs[1].boxplot(all_data)
+    axs[1].set_title('Box plot')
+
+    # adding horizontal grid lines
+    for ax in axs:
+        ax.yaxis.grid(True)
+        ax.set_xticks([y + 1 for y in range(len(all_data))],
+                    labels=['Long', 'Short'])
+        ax.set_xlabel('samples')
+        ax.set_ylabel('Observed values')
+
+    plt.show()
