@@ -40,7 +40,7 @@ def Order_Reduceonly(Wallet,position,history,price,tictime,Taker):
 
     #Wallet.loc[len(Wallet)]=[timee,balance,]
 
-def Order_Limit(side,position,history,price,tictime,lin):
+def Order_Limit(side,position,history,price,tictime,Order):
     timee = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(tictime)))
     if side == 'long':
         history['long']['buy']['time'].append(timee)
@@ -50,14 +50,16 @@ def Order_Limit(side,position,history,price,tictime,lin):
         position['profitcut'] = 1.02*price
         position['losscut'] = price*0.99
         position['lbtime']=tictime
+        Order['long']=0
     else:
         history['short']['buy']['time'].append(timee)
         history['short']['buy']['price'].append(price)
         position['entry_price'] = price
         position['side'] = -1
         position['profitcut'] = 0.98*price
-        position['losscut'] = 1.001*price
+        position['losscut'] = 1.01*price
         position['sbtime']=tictime
+        Order['short']=0
     
 
 def candle_go(ohlc):
@@ -79,16 +81,15 @@ def minmax_ohlc(ohlc,localextrema,lin,a):#a is half-length
     c = a*2-1
     b = a-1
     if np.argmax(ohlc[-c:,2])==b:
-        t= time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(ohlc[-a,0])))
-        localextrema['maximum']['time'].append(t)
+        localextrema['maximum']['time'].append(ohlc[-a,0])
         localextrema['maximum']['price'].append(ohlc[-a,2])
         if localextrema['aori'] == -1:
             localextrema['maximum']['length'].append(localextrema['maximum']['price'][-1]-localextrema['minimum']['price'][-1])
         localextrema['aori'] = 1
 
     if np.argmin(ohlc[-c:,3])==b:
-        t= time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(ohlc[-a,0])))
-        localextrema['minimum']['time'].append(t)
+        #t= time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(ohlc[-a,0])))
+        localextrema['minimum']['time'].append(ohlc[-a,0])
         localextrema['minimum']['price'].append(ohlc[-a,3])
         if localextrema['aori'] == 1:
             localextrema['minimum']['length'].append(localextrema['maximum']['price'][-1]-localextrema['minimum']['price'][-1])
@@ -136,21 +137,42 @@ def vol_vol(ohlc):
                 
 def linearfit(tictime,ohlc,lin,length):
     lenn = length
-    std = np.std(ohlc[-lenn:])
     list = ohlc[-lenn:]
+    std = np.std(list)
     z=np.polyfit(range(lenn),list,1)
     p=np.poly1d(z)
     timee = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(tictime+60)))
     lin['time'].append(timee)
-    mid = p(lenn)
-    lin['mid'].append(mid)
-    lin['top'].append(mid+std)
-    lin['bot'].append(mid-list[-1]*0.002-std)
+    linfit= p(lenn)
+    lin['mid'].append(linfit)
+    lin['top'].append(linfit+std*2)
+    lin['bot'].append(linfit-std*2)
+
+def linearfit_(tictime,listt,length):
+    lenn = length
+    list = listt['price'][-lenn:]
+    timelist = listt['time'][-lenn:]
+    timeinit=timelist[-lenn]
+    for i,_ in enumerate(timelist):
+        timelist[i]-=timeinit
+    z=np.polyfit(timelist,list,1)
+    p=np.poly1d(z)
+    print(z)
+    #timee=listt['time'][-1]-listt['time'][0]
+    linfit= p(tictime-timeinit)
+    return linfit
+
+        
+
 
         
 import matplotlib.pyplot as plt
 def profitrate(Wallet):
-    Wallet['sprofit']=[1]
+    if not Wallet['sprofit']:
+        Wallet['sprofit']=[1]
+    if not Wallet['lprofit']:
+        Wallet['lprofit']=[1]
+
 
     fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(9, 4))
     all_data=([(Wallet['lprofit']),(Wallet['sprofit'])])
