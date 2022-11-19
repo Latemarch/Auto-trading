@@ -47,8 +47,8 @@ def Order_Limit(side,position,history,price,tictime,Order):
         history['long']['buy']['price'].append(price)
         position['side'] = 1
         position['entry_price'] = price
-        position['profitcut'] = 1.02*price
-        position['losscut'] = price*0.99
+        position['profitcut'] = 1.01*price
+        position['losscut'] = price*0.98
         position['lbtime']=tictime
         Order['long']=0
     else:
@@ -56,7 +56,7 @@ def Order_Limit(side,position,history,price,tictime,Order):
         history['short']['buy']['price'].append(price)
         position['entry_price'] = price
         position['side'] = -1
-        position['profitcut'] = 0.98*price
+        position['profitcut'] = 0.985*price
         position['losscut'] = 1.01*price
         position['sbtime']=tictime
         Order['short']=0
@@ -161,6 +161,12 @@ def linearfit_(tictime,listt,length):
     #timee=listt['time'][-1]-listt['time'][0]
     linfit= p(tictime-timeinit)
     return linfit
+
+def movingavg(tictime,ohlc,lin):
+    timee = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(tictime+60)))
+    #lin['time'].append(timee)
+    lin['bot'].append(np.mean(ohlc[-40:]))
+
 
         
 

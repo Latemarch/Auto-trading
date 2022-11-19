@@ -77,10 +77,10 @@ def minmax1(tictime,position,lin,Order):
     if not position['side']:
         if position['ltime']<tictime-1200:
             Order['long'] = 1
-            Order['lprice']= lin['bot'][-1]-200
-        #if position['stime']<tictime-1200:
-        #    Order['short'] = 1
-        #    Order['sprice'] = lin['top'][-1]+100
+            Order['lprice']= lin['bot'][-1]
+        if position['stime']<tictime-1200:
+            Order['short'] = 1
+            Order['sprice'] = lin['top'][-1]+1000
 
         
 def minmax2(tictime,position,lin):

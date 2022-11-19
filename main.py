@@ -30,12 +30,9 @@ Order = {'long':0,'short':0,'lprice':0,'sprice':0}
 
 lin = {'time':[],'mid':[],'top':[],'bot':[]} 
 
-permit_long = 0
-permit_short= 0
-permit_short1= 0
-premaxmacd = 0
-start =0 
-last = 1
+long2_top =0
+start =0
+last = 2
 graph = 1
 stoporder = 0
 for h in range(start,last):
@@ -75,17 +72,22 @@ for h in range(start,last):
         else: 
             tictime = float(row[0])
             price = ohlc_list[-1]
+
         if ohlc_list[0] - ohlc_list[-1]> 100: 
-            Order['long']=3
+            Order['long']=2
             stoporder=1
         
-            #if ohlc_list[0] - ohlc_list[-1]< -200: 
-            #    Order['short']=0
 
   
 
         # i min canlde =========================
         if minute != tictime//60:
+            '''
+            if long2_top:
+                long2_top=0
+                mm.Order_Reduceonly(Wallet,position,history,price,tictime,Taker=False)
+                position['stime'] = tictime
+            '''
             k+=1 
             minute=tictime//60
             ohlc=mm.addcandle(ohlc,ohlc_list,volume,tictime)
@@ -98,33 +100,48 @@ for h in range(start,last):
             mm.makingindi(ohlc,indicators,tictime)
             mm.minmax_macd(indicators,localextrema,10)
             mm.minmax_ohlc(ohlc,localextrema_ohlc,lin,10)
-            mm.linearfit(tictime,ohlc[:,4],lin,40)
+            mm.linearfit(tictime,ohlc[:,4],lin,20)
             
             #======idicators======
 
             #Order,targetprice = st.macd(tictime,position,indicators,localextrema,price,70,premaxmacd)
 
 
+            #======strategy========
             if len(localextrema_ohlc['maximum']['price'])<3:continue
             st.minmax1(tictime,position,lin,Order)
             st.exitprice(position,ohlc,localextrema_ohlc)
-            jam = st.jammed(ohlc)
 
+
+            vol = mm.vol_vol(ohlc)
+            if vol[3]<0 or vol[2]<0:
+                Order['long']=0
+
+            jam = st.jammed(ohlc)
             if jam < 10:
                 if position['side']==1:Order['long'] = 2
-                else: Order['long'] = 0
+                Order['long'] = 0
+
+            #======strategy========
+
 
                 
 
         if k < 50: continue 
+        if long2_top:
+            if indicators['macd_osc'][-1]<indicators['macd_osc'][-2]:
+                long2_top=0
+                mm.Order_Reduceonly(Wallet,position,history,price,tictime,Taker=False)
+                position['ltime'] = tictime
+            else: continue
+
 
         if position['side']==1:
             if Order['long']==2:
                 mm.Order_Reduceonly(Wallet,position,history,price,tictime,Taker=False)
                 position['ltime'] = tictime
-            elif Order['long']==3:
-                mm.Order_Reduceonly(Wallet,position,history,price,tictime,Taker=True)
-                position['ltime'] = tictime
+            elif price > lin['top'][-1]+50:
+                long2_top=1
             elif price < position['losscut']:
                 mm.Order_Reduceonly(Wallet,position,history,price,tictime,Taker=True)
                 position['ltime'] = tictime
@@ -137,8 +154,8 @@ for h in range(start,last):
             elif Order['short']==3:
                 mm.Order_Reduceonly(Wallet,position,history,price,tictime,Taker=True)
                 position['stime'] = tictime
-            elif price < lin['bot'][-1]:
-                mm.Order_Reduceonly(Wallet,position,history,price,tictime,Taker=False)
+            #elif price < lin['bot'][-1]:
+            #    mm.Order_Reduceonly(Wallet,position,history,price,tictime,Taker=False)
             elif price > position['losscut']:
                 mm.Order_Reduceonly(Wallet,position,history,price,tictime,Taker=True)
                 position['stime'] = tictime
@@ -167,7 +184,7 @@ if graph:
     ma10=go.Scatter(x=indicators['time'],y=indicators['ma1'],line=dict(color='blue',width=0.8),name='ma10')
     lin_top =go.Scatter(x=lin['time'],y=lin['top'],line=dict(color='red',width=0.8),name='lintop')
     lin_mid=go.Scatter(x=lin['time'],y=lin['mid'],line=dict(color='red',width=0.8),name='lintop')
-    lin_bot=go.Scatter(x=lin['time'],y=lin['bot'],line=dict(color='red',width=0.8),name='lintop')
+    lin_bot=go.Scatter(x=lin['time'],y=lin['bot'],line=dict(color='blue',width=0.8),name='lintop')
 
     history_SS = go.Scatter(x=history['short']['sell']['time'], y=history['short']['sell']['price'], mode ="markers", marker=dict(size =20,color='black',symbol= '5'), name='Sell short')
     history_BS = go.Scatter(x=history['short']['buy']['time'], y=history['short']['buy']['price'], mode ="markers", marker=dict(size = 20, color='white',symbol= '6'), name='buy short')
@@ -196,10 +213,15 @@ if graph:
     fig.add_trace(MACD_Oscil,row=2,col=1)
     fig.show()
 
-
-#print(localextrema['maximum']['length'])
+#Elapsed Time
 print("time :",time.time()-startcode)
 
-
+# 
+if Wallet['lprofit']:
+    lprofit =np.array(Wallet['lprofit'])
+    print('Long:',round(np.mean(lprofit),3),'//',round(np.std(lprofit),3))
+if Wallet['sprofit']:
+    sprofit =np.array(Wallet['sprofit'])
+    print('Short:',round(np.mean(sprofit),3),'//',round(np.std(sprofit),3))
 mm.profitrate(Wallet)
 #mm.extremadist(localextrema)
