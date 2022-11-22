@@ -32,12 +32,13 @@ lin = {'time':[],'mid':[],'top':[],'bot':[]}
 
 long2_top=0
 long1_bot=0
-start =18
+start =0
 last = 20
 graph = 1
 stoporder = 0
 z0 ={'time':[],'price':[]} 
 for h in range(start,last):
+
     with gzip.open('/Users/jun/btcusd/%03d.gz' % h, 'rb') as f:
         data = f.readlines()
 
@@ -66,6 +67,8 @@ for h in range(start,last):
             'macd_osc':np.empty([0])
         }
     #print(h) 
+    init_bal= Wallet['balance'][-1]
+    init_pri= price
     for i, row in enumerate(daytics):
     
         ohlc_list.append(float(row[4]))
@@ -182,7 +185,7 @@ for h in range(start,last):
             if Order['short']==1 and price>=Order['sprice']:
                 mm.Order_Limit('short',position,history,price,tictime,Order)
 
-    print(h)
+    print(h,round((Wallet['balance'][-1]-init_bal)/init_bal*100,2),round((price-init_pri)/init_pri*100,2))
 
 
         
