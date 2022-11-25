@@ -3,18 +3,15 @@ import mymodule as mm
 import time
 
 
-def macd(k,position,indicators,localextrema,price,macdlimit,premaxmacd):
+def macd(k,Order,position,indicators,localextrema,price,macdlimit,premaxmacd):
 
     permit_short1 = 0
-    permit_long = 0
-    permit_short= 0
-            
 
     if not position['side'] and len(localextrema['maximum']['price'])>0:
         #if indicators['macd_osc'][-1] < 100 and indicators['macd_osc'][-2] < indicators['macd_osc']['price'][-1] and position['ltime'] < k-600 :
         if -indicators['macd_osc'][-1] > localextrema['maximum']['price'][-1]*2 > 20 and indicators['macd_osc'][-2]< indicators['macd_osc'][-1]:
-            targetprice = price - 1
-            permit_long = 1
+            Order['long'] = 1
+            Order['lprice'] = price -1
 
         elif len(localextrema['maximum']['price']) > 0:
             if localextrema['maximum']['price'][-1] > macdlimit:
@@ -23,13 +20,8 @@ def macd(k,position,indicators,localextrema,price,macdlimit,premaxmacd):
                 premaxmacd = localextrema['maximum']['price'][-1]
 
             if indicators['macd_osc'][-2]>0 and indicators['macd_osc'][-1] < 0 and position['stime']<k-600 and permit_short1:
-                permit_short=1
-                targetprice = price + 1
-    if permit_long:
-        return 1,targetprice
-    elif permit_short:
-        return -1,targetprice
-    else: return 0,0
+                Order['short']=1
+                Order['sprice'] = price +1
 
 
 #def minmax(localextrema_ohlc):
@@ -43,7 +35,7 @@ def exitprice(position,ohlc,extrema):
             k =np.argmin(ohlc[-i:,3])
             minprice = ohlc[-i+k,3]
             extrema = np.array(extrema['maximum']['length'][-5:])
-            exitp = minprice+np.mean(extrema)*2
+            exitp = minprice+ohlc[-1,3]*0.02#np.mean(extrema)*2
             if position['profitcut'] > exitp:
                 position['profitcut'] = exitp
     elif position['side'] == -1:
@@ -78,9 +70,9 @@ def minmax1(tictime,position,lin,Order):
         if position['ltime']<tictime-1200:
             Order['long'] = 1
             Order['lprice']= lin['bot'][-1]
-        if position['stime']<tictime-1200:
-            Order['short'] = 1
-            Order['sprice'] = lin['top'][-1]+1000
+        #if position['stime']<tictime-1200:
+        #    Order['short'] = 1
+        #    Order['sprice'] = lin['top'][-1]+1000
 
         
 def minmax2(tictime,position,lin):

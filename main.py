@@ -34,13 +34,17 @@ long2_top=0
 long1_bot=0
 start =0
 last = 20
-graph = 1
+graph = 0
 stoporder = 0
 z0 ={'time':[],'price':[]} 
 for h in range(start,last):
 
-    with gzip.open('/Users/jun/btcusd/%03d.gz' % h, 'rb') as f:
-        data = f.readlines()
+    try:
+        with gzip.open('/Users/jun/btcusd/%03d.gz' % h, 'rb') as f:
+            data = f.readlines()
+    except:
+        with gzip.open('D:/tbproject/data/btcusd/%03d.gz' % h, 'rb') as f:
+            data = f.readlines()
 
     daytics = []
     for row in data:
@@ -52,7 +56,9 @@ for h in range(start,last):
     if h == start:
         price = float(daytics[1][4])
         tictime = float(daytics[1][0])
+        pretime = tictime-10
         minute = tictime//60
+        premaxmacd = 0
         k = 0
         ohlc_list = []
         volume = 0
@@ -79,21 +85,16 @@ for h in range(start,last):
             tictime = float(row[0])
             price = ohlc_list[-1]
 
-        if ohlc_list[0] - ohlc_list[-1]> 100: 
+        if (ohlc_list[0] - ohlc_list[-1])/(tictime-pretime)> 0: 
             Order['long']=0
             stoporder=1
+            pretime = tictime
         
 
   
 
         # i min canlde =========================
         if minute != tictime//60:
-            '''
-            if long2_top:
-                long2_top=0
-                mm.Order_Reduceonly(Wallet,position,history,price,tictime,Taker=False)
-                position['stime'] = tictime
-            '''
             k+=1 
             minute=tictime//60
             ohlc=mm.addcandle(ohlc,ohlc_list,volume,tictime)
@@ -117,6 +118,7 @@ for h in range(start,last):
             #======strategy========
             if len(localextrema_ohlc['maximum']['price'])<3:continue
             st.minmax1(tictime,position,lin,Order)
+            st.macd(tictime,Order,position,indicators,localextrema,price,50,premaxmacd)
             #st.exitprice(position,ohlc,localextrema_ohlc)
 
 
@@ -128,9 +130,11 @@ for h in range(start,last):
             jam = st.jammed(ohlc)
             if jam < 10:
                 if position['side']==1:Order['long'] = 2
-                Order['long'] = 0
+                else:Order['long'] = 0
+                #Order['long'] = 0
 
             #======strategy========
+
 
 
                 
@@ -141,11 +145,13 @@ for h in range(start,last):
                 long2_top=0
                 mm.Order_Reduceonly(Wallet,position,history,price,tictime,Taker=False)
                 position['ltime'] = tictime
+                Order['long']=0
             else: continue
         elif long1_bot:
-            if indicators['macd_osc'][-1]>indicators['macd_osc'][-2]:# and z0['price'][-1]<-10:
+            if indicators['macd_osc'][-1]>-100:#indicators['macd_osc'][-2]:# and z0['price'][-1]<-10:
                 long1_bot=0
                 mm.Order_Limit('long',position,history,price,tictime,Order)
+                Order['long']=0
 
 
 
@@ -153,7 +159,7 @@ for h in range(start,last):
             if Order['long']==2:
                 mm.Order_Reduceonly(Wallet,position,history,price,tictime,Taker=False)
                 position['ltime'] = tictime
-            elif price > lin['top'][-1]+50:
+            elif price > lin['top'][-1]:
                 long2_top=1
             elif indicators['macd_osc'][-1]>50:
                 long2_top=1
@@ -163,6 +169,9 @@ for h in range(start,last):
             elif price > position['profitcut']:
                 long2_top=1
                 #mm.Order_Reduceonly(Wallet,position,history,price,tictime,Taker=False)
+            #elif indicators['macd_osc'][-1] < indicators['macd_osc'][-2] <indicators['macd_osc'][-3]:
+            #    mm.Order_Reduceonly(Wallet,position,history,price,tictime,Taker=True)
+            #    position['ltime'] = tictime
         elif position['side'] == -1:
             if Order['short']==2:
                 mm.Order_Reduceonly(Wallet,position,history,price,tictime,Taker=False)
@@ -180,8 +189,8 @@ for h in range(start,last):
                 position['stime'] = tictime
         else:
             if Order['long']==1 and price<=Order['lprice']:
-                long1_bot = 1
-                #mm.Order_Limit('long',position,history,price,tictime,Order)
+                #long1_bot = 1
+                mm.Order_Limit('long',position,history,price,tictime,Order)
             if Order['short']==1 and price>=Order['sprice']:
                 mm.Order_Limit('short',position,history,price,tictime,Order)
 

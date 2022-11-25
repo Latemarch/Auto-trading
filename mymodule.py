@@ -47,8 +47,8 @@ def Order_Limit(side,position,history,price,tictime,Order):
         history['long']['buy']['price'].append(price)
         position['side'] = 1
         position['entry_price'] = price
-        position['profitcut'] = 1.05*price
-        position['losscut'] = price*0.95
+        position['profitcut'] = 1.02*price
+        position['losscut'] = price*0.98
         position['lbtime']=tictime
         Order['long']=0
     else:
@@ -143,7 +143,7 @@ def linearfit(tictime,ohlc,lin,length):
     p=np.poly1d(z)
     timee = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(float(tictime+60)))
     lin['time'].append(timee)
-    linfit= p(lenn)
+    linfit= p(lenn+1)
     lin['mid'].append(linfit)
     lin['top'].append(linfit+std*2)
     lin['bot'].append(linfit-std*2)
